@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'a+a-me-xhf#%1^*2(5$j2si2(m1k6bcl%p@r-w!x_-rh@=c76r'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -69,18 +69,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'GME.wsgi.application'
-
-
-# 原本django的splite数据库
-# Database
-# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
 
 
 # 默认database改成dummy（傀儡）
