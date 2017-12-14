@@ -83,13 +83,12 @@ from mongoengine import connect
 
 connect(
     db='z3bus',
-
     host='0.0.0.0',
     port=27017,
 )
-
 # username='user',
 # password='12345',
+
 
 # mongodb handler session tracking
 # SESSION_ENGINE = 'mongoengine.django.sessions'
