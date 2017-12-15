@@ -37,6 +37,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'gme',
+    'gme_mongoengine',
 )
 
 MIDDLEWARE_CLASSES = (

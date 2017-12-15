@@ -18,5 +18,6 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^',include('gme.urls'))
+    url(r'^',include('gme.urls')),
+    url(r'gme_mongoengine',include('gme_mongoengine.urls')),
 ]
