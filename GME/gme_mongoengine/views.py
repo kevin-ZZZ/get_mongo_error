@@ -26,12 +26,3 @@ def index(request):
     context = {"name": "dict"}
     return render(request, "index2.html", context)
 
-def query(skd, field):
-    """
-    通过类似ORM映射的方式用mongoengine进行查询
-    :param skd:
-    :param field:
-    :return:
-    """
-    if field in fieldFir:
-        pass

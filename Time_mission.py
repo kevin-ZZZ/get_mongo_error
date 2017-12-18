@@ -1,3 +1,4 @@
+#! /usr/bin/python2
 # coding:utf-8
 # 这个文件是需要定时执行的文件,在linux下定时开启命令
 
@@ -20,9 +21,10 @@ def getDb():
     db = conn.z3dbus
     """
     # 不需要密码认证的本地mongo
-    uri = "mongodb://0.0.0.0:27017/z3bus"
+    uri = "mongodb://0.0.0.0:27017/z3dbus"
     conn = MongoClient(uri)
-    db = conn.z3bus
+    db = conn.z3dbus
+    print("已经连接到了数据库")
     # 连接到目标数据库
     return db
 

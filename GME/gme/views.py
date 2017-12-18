@@ -4,10 +4,8 @@ from django.http import HttpResponse, JsonResponse
 from .models import *
 from django.conf import settings
 from .field_list import fieldFir, perf_idx, val_idx, fin_idx, fcst_idx, mkt2_idx, mkt_idx, signal_normal, candle_charts
-from manage import db
 import time
 from threading import Lock
-
 
 
 def index(request):
@@ -18,21 +16,6 @@ def index(request):
     """
     return render(request, "index.html")
 
-"""
-def rawQuery(skd, field):
-
-    不通过mongoengine提供的orm层,直接调用pymongo包查询.
-    :param skd:
-    :param field:
-    :return:
-
-    # 通过句柄db进行操作
-    res = db.Z3_EQUITY_HISTORY.find({"innoCode": skd, field: None}).count()
-    print res
-    cursor = db.Z3_EQUITY_HISTORY.find({}, {"_id": 0, "name": 1})
-    print(JSONEncoder().encode(list(cursor)))
-    return {"count": res, }
-"""
 
 def index2(request):
     """
@@ -58,6 +41,7 @@ def index2(request):
         return render(request, None)
 
     data = readKeySet()
+    db = connectMongod()
     # 将简略的字段变成全长字段,如"expr_enddate"变为"perf_idx.expr_enddate",便于查询
     if field in data:
         res = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, field: None}, {"_id": 0, "innerCode": 1, "trade_date": 1})
@@ -72,7 +56,24 @@ def index2(request):
                 return render(request, None)
 
     context = {"res": res}
-    return render(request, context)
+    return HttpResponse(context)
+
+
+def connectMongod():
+    """
+    连接到mongo,返回db
+    :return:
+    """
+    # 通过pymongo连接数据库,进行操作
+    from pymongo import MongoClient
+    # 需要认证操作的mongo客户端
+    # uri = "mongodb://z3dbusadmin:z3dbusadmin@10.77.4.37:27017/z3dbus?authMechanism=SCRAM-SHA-1"
+    # 不需要密码认证的本地mongo
+    uri = "mongodb://0.0.0.0:27017/z3dbus"
+    conn = MongoClient(uri)
+    # 连接到目标数据库
+    db = conn.z3dbus
+    return db
 
 
 def readKeySet():
@@ -81,24 +82,25 @@ def readKeySet():
     :return:
     """
     data = set()
-    f = open("/home/python/Desktop/keySet.py" , "r")
+    f = open("/home/python/Desktop/keySet.py", "r")
     oriData = f.read()
     f.close()
     data = set(oriData.split(","))
     return data
 
 
-def connectMongod():
-    # 不使用mongoengin进行操作
-    # 通过pymongo连接数据库,进行操作
-    from pymongo import MongoClient
-    # 需要认证操作的mongo客户端
-    uri = "mongodb://z3dbusadmin:z3dbusadmin@10.77.4.37:27017/z3dbus?authMechanism=SCRAM-SHA-1"
-    # 不需要密码认证的本地mongo
-    # uri = "mongodb://0.0.0.0:27017/z3bus"
-    conn = MongoClient(uri)
-    # 连接到目标数据库
-    db = conn.z3dbus
-    return db
+"""
+def rawQuery(skd, field):
 
+    不通过mongoengine提供的orm层,直接调用pymongo包查询.
+    :param skd:
+    :param field:
+    :return:
 
+    # 通过句柄db进行操作
+    res = db.Z3_EQUITY_HISTORY.find({"innoCode": skd, field: None}).count()
+    print res
+    cursor = db.Z3_EQUITY_HISTORY.find({}, {"_id": 0, "name": 1})
+    print(JSONEncoder().encode(list(cursor)))
+    return {"count": res, }
+"""
