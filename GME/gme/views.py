@@ -8,9 +8,6 @@ from manage import db
 import time
 from threading import Lock
 
-# Create your views here.
-# 定义一个全局变量KeySet,用来盛放mongodb中Z3_EQUITY_HISTORY集合的字段
-KEYSET = ()
 
 
 def index(request):
@@ -60,12 +57,13 @@ def index2(request):
     else:
         return render(request, None)
 
+    data = readKeySet()
     # 将简略的字段变成全长字段,如"expr_enddate"变为"perf_idx.expr_enddate",便于查询
-    if field in KEYSET:
+    if field in data:
         res = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, field: None}, {"_id": 0, "innerCode": 1, "trade_date": 1})
         count = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, field: None}).count()
     else:
-        for i in KEYSET:
+        for i in data:
             if field in i:
                 res = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, i: None},
                                                 {"_id": 0, "innerCode": 1, "trade_date": 1})
@@ -75,6 +73,19 @@ def index2(request):
 
     context = {"res": res}
     return render(request, context)
+
+
+def readKeySet():
+    """
+    用于取出文件中的字符串,并且处理成集合模式
+    :return:
+    """
+    data = set()
+    f = open("/home/python/Desktop/keySet.py" , "r")
+    oriData = f.read()
+    f.close()
+    data = set(oriData.split(","))
+    return data
 
 
 def connectMongod():
@@ -91,53 +102,3 @@ def connectMongod():
     return db
 
 
-def getAverageKeySet(db):
-    """
-    # 随机找出3只股票,将字段求并集,每天定时执行一次
-    :return:
-    """
-    mutex = Lock()
-    while True:
-        global KEYSET
-        mutex.acquire()
-        keySet1 = getKeySet(db, "000027.SZ")
-        keySet2 = getKeySet(db, "000046.SZ")
-        keySet3 = getKeySet(db, "600120.SH")
-        KEYSET = keySet1 | keySet2 | keySet3
-        mutex.release()
-        time.sleep(3600 * 24)
-
-
-def getKeySet(db, innerCode):
-    """
-    通过调用getKey函数,得到整个mongo表中所有的字段
-    :param db:
-    :return:
-    """
-    # 提取出mongo表中所有的字段
-    tableKey = set()
-    result = db.Z3_EQUITY_HISTORY.find({"innerCode": innerCode})
-    for res in result:
-        getKey(res, tableKey, "")
-        print dict(res)
-    print tableKey
-    print db.Z3_EQUITY_HISTORY.find({"innerCode": innerCode}).count()
-    return tableKey
-
-
-def getKey(res, tableKey, pre):
-    """
-    将mongo中的所有字段当做嵌套字典解析,将结果存到集合中
-    :param res:查询集中的一个Document
-    :param tableKey: 用于盛放key的集合
-    :return:
-    """
-    for key, value in res.items():
-        if not isinstance(value, dict):
-            tableKey.add(pre + key)
-        else:
-            if pre:
-                content = pre + key + "."
-            else:
-                content = key + "."
-            getKey(value, tableKey, content)
