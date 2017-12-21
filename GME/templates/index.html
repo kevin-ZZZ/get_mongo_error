@@ -72,7 +72,7 @@
         }
 
         .line1 {
-            margin-right: 40px;
+            margin-right: 20px;
         }
 
         .line2 {
@@ -122,6 +122,16 @@
             margin-bottom: 20px;
         }
 
+        .err_remind {
+            display: inline-block;
+            float: right;
+            margin-right: 10px;
+        }
+
+        .err_remind span {
+            color: red;
+        }
+
     </style>
 
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
@@ -130,8 +140,26 @@
 
             // 绑定按钮的点击事件，发出ajax请求
             $("#query").click(function () {
+
+                {# 在发送ajax请求之前先初始化#}
+                $("#extend_ul").empty()
+                $("#err_remind").hide();
+                $("#err_remind").empty();
+
+                {#直接在前台判断股票代码是否为空#}
                 var stockcode = $("#stockcode").val();
+                if (!stockcode) {
+                    show_error("股票代码为空")
+                    return
+                }
+
+                {#直接在前台判断输入字段是否为空#}
                 var field = $("#field").val();
+                if (!field) {
+                    show_error("字段为空")
+                    return
+                }
+
                 var array1 = [];
                 array1 = stockcode.split(",");
                 console.log(stockcode);
@@ -150,30 +178,40 @@
                 $.ajax({
                     type: 'POST',
                     url: "/index2/",
+                    dataType: "json",
                     data: {"skd": skd, "field": field},
                     success: function (info) {
-                        alert("请求成功！");
+                        {#                        alert("请求成功！");#}
                         if (!info) {
-                            alert("输入的股票代码或者字段不存在!");
-                        } else {
+                            alert("")
+                            show_error("请求失败")
+                        } else if (info.indexOf("入") > 0) {
+                            show_error(info)
+                        }
+                        else {
+                            alert(info)
+                            alert(typeof(info))
                             add(info, skd, field);
                         }
                     },
                     error: function () {
-                        alert('出错，请从新输入！');
+                        alert('请求失败,请从新查询！');
                     },
                 });
-
-
             }
 
+            var show_error = function (message) {
+                var msg = "<span>" + message + "</span>";
+                $("#err_remind").show();
+                $("#err_remind").append(msg)
+            }
             {#动态添加返回的内容#}
             var add = function (info, skd, field) {
 
-                var label = "<ul><li><span>股票代码：\
-				    </span><span>" + skd.toString() + "</span></li><li><span>" + field.toString() + "</span>\
-				    <span>null</span></li></ul>";
-                $("#static_blank").append(label)
+                var label = "<li><span>股票代码：\
+				    </span><span>" + skd.toString() + "</span></li><li><span>" + field.toString() + ":" + "</span>\
+				    <span>null</span></li><br/>";
+                $("#extend_ul").append(label)
             }
 
         })
@@ -189,11 +227,12 @@
     <div class="part part2">
         <div class="part2_1">
             <form action="#" ,method="POST">
-                <span class="line">输入股票代码：</span>
-                <input type="text" class="line line1" value="00001" id="stockcode" name="innoCode">
-                <span class="line">输入字段名称：</span>
-                <input type="text" class="line line1" id="field" name="field">
+                <span class="line">股票代码：</span>
+                <input type="text" class="line line1" value="000001" id="stockcode" name="innoCode">
+                <span class="line">字段名称：</span>
+                <input type="text" class="line line1" value="trade_date" id="field" name="field">
                 <input type="button" value="查询" class="line2" id="query">
+                <div class="err_remind" id="err_remind"></div>
             </form>
         </div>
         <div class="part2_2">
@@ -214,39 +253,8 @@
         <br/>
         <div class="dynamic">
             <div class="static_blank" id="static_blank"></div>
-            <ul>
-                <li>
-                    <span>股票代码：</span>
-                    <span>00001.sz</span>
-                </li>
-                <li>
-                    <span>查询时间</span>
-                    <span></span>
-                </li>
-                <li>
-                    <span>股票代码：</span>
-                    <span>00001.sz</span>
-                </li>
-                <li>
-                    <span>查询时间</span>
-                    <span></span>
-                </li>
-                <li>
-                    <span>股票代码：</span>
-                    <span>00001.sz</span>
-                </li>
-                <li>
-                    <span>查询时间</span>
-                    <span></span>
-                </li>
-                <li>
-                    <span>股票代码：</span>
-                    <span>00001.sz</span>
-                </li>
-                <li>
-                    <span>查询时间</span>
-                    <span></span>
-                </li>
+            <ul id="extend_ul">
+
             </ul>
         </div>
     </div>

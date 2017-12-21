@@ -1,9 +1,9 @@
 # coding:utf-8
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
+import json
 from .models import *
 from django.conf import settings
-from .field_list import fieldFir, perf_idx, val_idx, fin_idx, fcst_idx, mkt2_idx, mkt_idx, signal_normal, candle_charts
 import time
 from threading import Lock
 
@@ -26,36 +26,44 @@ def index2(request):
     # 接收ajax 数据请求
     dict = request.POST
     if not dict:
-        return render(request, None)
+        return HttpResponse(None)
     skd = dict.get("skd")
     field = dict.get("field")
-    if not (skd and field):
-        return render(request, None)
 
     # 将输入的skd变成带后缀的股票代码
-    if skd.startswith("3") or skd.startswith("0"):
+    if (skd.startswith("3") or skd.startswith("0")) and len(skd) == 6:
         skd += ".SZ"
-    elif skd.startswith("6"):
+    elif skd.startswith("6") and len(skd) == 6:
         skd += ".SH"
     else:
-        return render(request, None)
+        return HttpResponse({"code":"0","show":"输入的股票代码有误!"})
 
+    # 取出保存在本地文件里面的数据(显示mongo嵌套结构的数据)
     data = readKeySet()
     db = connectMongod()
     # 将简略的字段变成全长字段,如"expr_enddate"变为"perf_idx.expr_enddate",便于查询
     if field in data:
-        res = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, field: None}, {"_id": 0, "innerCode": 1, "trade_date": 1})
+        print("skd:%s" % skd)
+        result = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, field: None},
+                                           {"_id": 0, "innerCode": 1, "trade_date": 1, field: 1})
         count = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, field: None}).count()
     else:
         for i in data:
             if field in i:
-                res = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, i: None},
-                                                {"_id": 0, "innerCode": 1, "trade_date": 1})
+                result = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, i: None},
+                                                   {"_id": 0, "innerCode": 1, "trade_date": 1, field: 1})
                 count = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, i: None}).count()
             else:
-                return render(request, None)
+                return HttpResponse({"code":"0","show":"输入的字段不存在"})
+    # for res in result:
+    #     print res["innerCode"]
 
-    context = {"res": res}
+    dataList = []
+    if count:
+        for res in result:
+            dataList.append({"innerCode": res["innerCode"], "trade_date": res["trade_date"], field: res[field]})
+    # print context
+    context = json.dumps({"code":"1","innerCode": skd, "count": count, "context": dataList})
     return HttpResponse(context)
 
 
@@ -89,18 +97,3 @@ def readKeySet():
     return data
 
 
-"""
-def rawQuery(skd, field):
-
-    不通过mongoengine提供的orm层,直接调用pymongo包查询.
-    :param skd:
-    :param field:
-    :return:
-
-    # 通过句柄db进行操作
-    res = db.Z3_EQUITY_HISTORY.find({"innoCode": skd, field: None}).count()
-    print res
-    cursor = db.Z3_EQUITY_HISTORY.find({}, {"_id": 0, "name": 1})
-    print(JSONEncoder().encode(list(cursor)))
-    return {"count": res, }
-"""
