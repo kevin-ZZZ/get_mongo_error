@@ -26,7 +26,7 @@ def index2(request):
     # 接收ajax 数据请求
     dict = request.POST
     if not dict:
-        return HttpResponse(None)
+        return HttpResponse(json.dumps({"code": "3", "show": "输入的股票代码有误!"}))
     skd = dict.get("skd")
     field = dict.get("field")
 
@@ -36,11 +36,12 @@ def index2(request):
     elif skd.startswith("6") and len(skd) == 6:
         skd += ".SH"
     else:
-        return HttpResponse({"code":"0","show":"输入的股票代码有误!"})
+        return HttpResponse(json.dumps({"code": "0", "show": "输入的股票代码有误!"}))
 
     # 取出保存在本地文件里面的数据(显示mongo嵌套结构的数据)
     data = readKeySet()
     db = connectMongod()
+
     # 将简略的字段变成全长字段,如"expr_enddate"变为"perf_idx.expr_enddate",便于查询
     if field in data:
         print("skd:%s" % skd)
@@ -53,17 +54,17 @@ def index2(request):
                 result = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, i: None},
                                                    {"_id": 0, "innerCode": 1, "trade_date": 1, field: 1})
                 count = db.Z3_EQUITY_HISTORY.find({"innerCode": skd, i: None}).count()
-            else:
-                return HttpResponse({"code":"0","show":"输入的字段不存在"})
-    # for res in result:
-    #     print res["innerCode"]
-
+        else:
+            return HttpResponse(json.dumps({"code": "0", "show": "输入的字段不存在"}))
+    print count
     dataList = []
-    if count:
+    if not count:
+        return HttpResponse(json.dumps({"code": "2", "show": "查询到0个结果"}))
+    else:
         for res in result:
             dataList.append({"innerCode": res["innerCode"], "trade_date": res["trade_date"], field: res[field]})
     # print context
-    context = json.dumps({"code":"1","innerCode": skd, "count": count, "context": dataList})
+    context = json.dumps({"code": "1", "innerCode": skd, "count": count, "context": dataList})
     return HttpResponse(context)
 
 
@@ -95,5 +96,3 @@ def readKeySet():
     f.close()
     data = set(oriData.split(","))
     return data
-
-

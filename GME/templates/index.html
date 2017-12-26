@@ -181,17 +181,19 @@
                     dataType: "json",
                     data: {"skd": skd, "field": field},
                     success: function (info) {
-                        {#                        alert("请求成功！");#}
-                        if (!info) {
-                            alert("")
-                            show_error("请求失败")
-                        } else if (info.indexOf("入") > 0) {
-                            show_error(info)
+                        alert("请求成功！");
+                        if (info.code == "3") {
+                            show_error("数据上传失败")
+                        } else if (info.code == "0") {
+                            alert("输入字段存在问题!")
+                            show_error(info.show)
                         }
-                        else {
-                            alert(info)
-                            alert(typeof(info))
+                        else if (info.code == "1") {
+                            show_error("发现有" + info.count + "个null值")
                             add(info, skd, field);
+                        }
+                        else if (info.code == "2") {
+                            show_error("未发现空字段")
                         }
                     },
                     error: function () {
@@ -208,10 +210,17 @@
             {#动态添加返回的内容#}
             var add = function (info, skd, field) {
 
-                var label = "<li><span>股票代码：\
-				    </span><span>" + skd.toString() + "</span></li><li><span>" + field.toString() + ":" + "</span>\
-				    <span>null</span></li><br/>";
-                $("#extend_ul").append(label)
+
+                var label = ""
+                for(var i=0;i<info.context.length;i++){
+                    label = "<li><div><span>股票代码：</span><span>" + info.context[i].innerCode +
+                        "</span></div><div><span>" + field
+                        + ":" + "</span><span>info.context[i].trade_date</span></div>"
+                        +"<div><span>trade_date:</span><span>"+info.context[i].trade_date
+                        +"</span></div>"+"</li><br/>";
+                    $("#extend_ul").append(label);
+                }
+
             }
 
         })
@@ -254,7 +263,7 @@
         <div class="dynamic">
             <div class="static_blank" id="static_blank"></div>
             <ul id="extend_ul">
-
+                <span></span>
             </ul>
         </div>
     </div>
